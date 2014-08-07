@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <assert.h>
+#include <inttypes.h>
 
 static const char T1 = 0x01; // 正,8位
 static const char t1 = 0xF1; // 负,8位
@@ -47,7 +48,7 @@ lunpackinit(lua_State * L) {
 }
 
 static inline int
-writeinteger(int64_t value,char *ptr,int bufferlen) {
+writeinteger(uint64_t value, uint8_t *ptr, int bufferlen) {
     bool positive = true;
     if(value < 0) {
         positive = false;
@@ -61,7 +62,14 @@ writeinteger(int64_t value,char *ptr,int bufferlen) {
         }
 
         *ptr = positive ? T4 : t4;
-        *((int64_t*)(ptr + 1)) = value;
+        ptr[1] = value & 0xff;
+        ptr[2] = (value >> 8) & 0xff;
+        ptr[3] = (value >> 16) & 0xff;
+        ptr[4] = (value >> 24) & 0xff;
+        ptr[5] = (value >> 32) & 0xff;
+        ptr[6] = (value >> 40) & 0xff;
+        ptr[7] = (value >> 48) & 0xff;
+        ptr[8] = (value >> 56) & 0xff;
         return 9;
     } else if((value & 0xFFFF0000) > 0) {
         assert(4 == sizeof(int32_t));
@@ -70,7 +78,10 @@ writeinteger(int64_t value,char *ptr,int bufferlen) {
         }
 
         *ptr = positive ? T3 : t3;
-        *((int32_t*)(ptr + 1)) = value;
+        ptr[1] = value & 0xff;
+        ptr[2] = (value >> 8) & 0xff;
+        ptr[3] = (value >> 16) & 0xff;
+        ptr[4] = (value >> 24) & 0xff;
         return 5;
     } else if((value & 0xFF00) > 0) {
         assert(2 == sizeof(int16_t));
@@ -79,7 +90,8 @@ writeinteger(int64_t value,char *ptr,int bufferlen) {
         }
 
         *ptr = positive ? T2 : t2;
-        *((int16_t*)(ptr + 1)) = value;
+        ptr[1] = value & 0xff;
+        ptr[2] = (value >> 8) & 0xff;
         return 3;
     } else {
         assert(1 == sizeof(int8_t));
@@ -88,7 +100,7 @@ writeinteger(int64_t value,char *ptr,int bufferlen) {
         }
 
         *ptr = positive ? T1 : t1;
-        *((int8_t*)(ptr + 1)) = value;
+        ptr[1] = value & 0xff;
         return 2;
     }
     return 0;
@@ -97,7 +109,7 @@ writeinteger(int64_t value,char *ptr,int bufferlen) {
 static inline int
 writestring(const char* value,char *ptr,int bufferlen) {
     int slen = (int)strlen(value);
-    int ret = writeinteger(slen,ptr,bufferlen);
+    int ret = writeinteger(slen,(uint8_t *)ptr,bufferlen);
 
     if(ret > 0) {
         if(bufferlen < ret+slen) {
@@ -117,8 +129,8 @@ lwrite(lua_State * L) {
     int bufferlen = BUFFER_MAX_LEN-gblock.sz;
     int wsz = 0;
     if (tp==LUA_TNUMBER) {
-        long value = lua_tonumber(L,1);
-        wsz = writeinteger(value,gblock.ptr,bufferlen);
+        uint64_t value = lua_tonumber(L,1);
+        wsz = writeinteger(value,(uint8_t *)gblock.ptr,bufferlen);
     } else if (tp==LUA_TSTRING) {
         const char * value = lua_tostring(L,1);
         wsz = writestring(value,gblock.ptr,bufferlen);
@@ -132,7 +144,7 @@ lwrite(lua_State * L) {
 }
 
 static int
-readinteger(const char * ptr, int bufferlen, int64_t *value) {
+readinteger(const uint8_t * ptr, int bufferlen, int64_t *value) {
     if(bufferlen <= 1) {
         return 0;
     }
@@ -143,14 +155,21 @@ readinteger(const char * ptr, int bufferlen, int64_t *value) {
     bool isInt32 = T & 0x04;
     bool isInt16 = T & 0x02;
     bool isInt8  = T & 0x01;
-    //printf("bool:%d,%d,%d,%d\n",isInt64,isInt32,isInt16,isInt8);
     if (isInt64) {
         assert(sizeof(int64_t)==8);
         if ((bufferlen - tlen) < sizeof(int64_t)) {
             return -1;
         }
 
-        int64_t v64 = *((int64_t*)(ptr + tlen));
+        int64_t v64 = (int64_t)ptr[1]
+                    | (int64_t)ptr[2] << 8
+                    | (int64_t)ptr[3] << 16
+                    | (int64_t)ptr[4] << 24
+                    | (int64_t)ptr[5] << 32
+                    | (int64_t)ptr[6] << 40
+                    | (int64_t)ptr[7] << 48
+                    | (int64_t)ptr[8] << 56;
+
         *value = positive ? v64 : -v64;
         tlen += sizeof(int64_t);
 
@@ -164,7 +183,7 @@ readinteger(const char * ptr, int bufferlen, int64_t *value) {
             return -1;
         }
 
-        int32_t v32 = *((int32_t*)(ptr + tlen));
+        int32_t v32 = ptr[1] | ptr[2] << 8 | ptr[3] << 16 | ptr[4] << 24;
         *value = positive ? v32 : -v32;
         tlen += sizeof(int32_t);
 
@@ -178,7 +197,7 @@ readinteger(const char * ptr, int bufferlen, int64_t *value) {
             return -1;
         }
 
-        int16_t v16 = *((int16_t*)(ptr + tlen));
+        int16_t v16 = ptr[1] | ptr[2] << 8;
         *value = positive ? v16 : -v16;
         tlen += sizeof(int16_t);
 
@@ -192,7 +211,8 @@ readinteger(const char * ptr, int bufferlen, int64_t *value) {
             return -1;
         }
 
-        int8_t v8 = *((int8_t*)(ptr + tlen));
+        //int8_t v8 = *((int8_t*)(ptr + tlen));
+        int8_t v8 = ptr[1];
         *value = positive ? v8 : -v8;
         tlen += sizeof(int8_t);
 
@@ -204,7 +224,7 @@ readinteger(const char * ptr, int bufferlen, int64_t *value) {
     return 0;
 }
 
-void FGLuaStackDump(lua_State* pL){
+void luaStackDump(lua_State* pL){
 	int i;
 	int top = lua_gettop(pL);
 	for(i=1;i<=top;i++){
@@ -227,29 +247,29 @@ void FGLuaStackDump(lua_State* pL){
 		printf("\n");
 	}
 }
+
 int
 lread(lua_State * L) {
     const char * tp = lua_tostring(L,1);
     lua_pop(L,1);
     int bufferlen = gblock.sz;
-    int ssz = 0;
+    int rsz = 0;
     if (strcmp(tp,"number")==0) {
         int64_t value = 0;
-        ssz = readinteger(gblock.ptr,bufferlen,&value);
+        rsz = readinteger((const uint8_t *)gblock.ptr,bufferlen,&value);
         lua_pushnumber(L,value);
     } else if (strcmp(tp,"string")==0) {
         int64_t len = 0;
-        int sz = readinteger(gblock.ptr,bufferlen,&len);
+        int sz = readinteger((const uint8_t *)gblock.ptr,bufferlen,&len);
         lua_pushlstring(L,gblock.ptr+sz,len);
-        ssz = sz + len;
+        rsz = sz + len;
     } else {
         fprintf(stderr,"error:unknow type %s\n",tp);
     }
-    gblock.ptr += ssz;
-    gblock.sz -= ssz;
+    gblock.ptr += rsz;
+    gblock.sz -= rsz;
     lua_pushnumber(L,gblock.sz);
     lua_insert(L,1);
-    //printf("read:%d\n",gblock.sz);
     return 2;
 }
 
@@ -260,13 +280,52 @@ lgetpack(lua_State * L) {
     return 2;
 }
 
-int luaopen_luaprot(lua_State *L) {
+static inline int
+read_2byte(char * buffer, int pos) {
+    int r = (int)buffer[pos] << 8 | (int)buffer[pos+1];
+    return r;
+}
+
+static inline void
+write_2byte(char * buffer, int r, int pos) {
+    buffer[pos] = (r >> 8) & 0xff;
+    buffer[pos+1] = r & 0xff;
+}
+
+int
+lreadid(lua_State * L) {
+    int id = read_2byte(gblock.ptr, 0);
+    lua_pushnumber(L,id);
+
+    int rsz = 2;
+    gblock.ptr += rsz;
+    gblock.sz -= rsz;
+    lua_pushnumber(L,gblock.sz);
+    lua_insert(L,1);
+    return 2;
+}
+
+int
+lwriteid(lua_State * L) {
+    int id = lua_tointeger(L,1);
+    write_2byte(gblock.ptr, id, 0);
+
+    int wsz = 2;
+    gblock.ptr += wsz;
+    gblock.sz += wsz;
+    lua_pushnumber(L,gblock.sz);
+    return 1;
+}
+
+int luaopen_lproto_c(lua_State *L) {
     luaL_checkversion(L);
     luaL_Reg l[] ={
         { "packinit", lpackinit },
+        { "writeid", lwriteid },
         { "write", lwrite },
         { "getpack", lgetpack },
         { "unpackinit", lunpackinit },
+        { "readid", lreadid },
         { "read", lread },
         { NULL, NULL },
     };

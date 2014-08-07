@@ -1,25 +1,22 @@
-package.cpath="luaclib/?.so;"
-local prot = require "luaprot"
+package.path="lualib/?.lua;"
+local lproto = require "lproto"
 
-local p = {
-    protId = 1,
+local protDict = {}
+
+local function registProt(p)
+    table.insert(protDict,p)
+    return #protDict
+end
+
+local dp = {
     user = "hanxi",
     money = 100,
-    list = {{a=1,b="h"},{a=2,b="s"}},
+    list = {
+        a = 1,
+        b = "hao",
+    },
 }
-
-ProtDict = {
-    [1] = {
-        user = "hanxi",
-        money = 100,
-        list = {
-            a = 1,
-            b = "hao",
-            _keysort = {"a","b"},
-        },
-        _keysort = {"user","money","list"},
-    }
-}
+local test_prot_Id = registProt(dp)
 
 -- 序列化
 function serialize(obj,n)
@@ -52,83 +49,15 @@ function serialize(obj,n)
     return lua
 end
 
-
-BUFFER_MAX_LEN = 10240
--- return : sz,buffer
-function pack(p)
-    prot.packinit()
-    local protId = 1
-    for _,key in ipairs(ProtDict[protId]._keysort) do
-        local tp = type(ProtDict[protId][key])
-        if tp=="table" then
-            local ret = prot.write(#p[key])
-            if ret>=BUFFER_MAX_LEN then
-                return -1
-            end
-            for _,v in ipairs(p[key]) do
-                for _,k in ipairs(ProtDict[protId][key]._keysort) do
-                    print(key,p[key],v,k,v[k])
-                    local ret = prot.write(v[k])
-                    if ret>=BUFFER_MAX_LEN then
-                        return -1
-                    end
-                end
-            end
-        else
-            local ret = prot.write(p[key])
-            if ret>=BUFFER_MAX_LEN then
-                return -1
-            end
-        end
-    end
-    return prot.getpack()
-end
-
-
-function unpack(sz,buffer)
-    if sz>=BUFFER_MAX_LEN then
-        return -1
-    end
-    prot.unpackinit(sz,buffer)
-    local p = {}
-    local protId = 1
-    for _,key in ipairs(ProtDict[protId]._keysort) do
-        local tp = type(ProtDict[protId][key])
-        if tp=="table" then
-            p[key] = {}
-            local ret,n = prot.read("number")
-            --print("count:",ret,n)
-            if ret<0 then
-                return -1
-            end
-            for i=1,n do
-                local temp = {}
-                for _,k in ipairs(ProtDict[protId][key]._keysort) do
-                    local ttp = type(ProtDict[protId][key][k])
-                    local ret,v = prot.read(ttp)
-                    print(ttp,ret,v)
-                    if ret<0 then
-                        return -2
-                    end
-                    temp[k] = v 
-                end
-                table.insert(p[key],temp)
-            end
-        else
-            local ret,v = prot.read(tp)
-            print(tp,ret,v)
-            if ret<0 then
-                return -3
-            end
-            p[key] = v
-        end
-    end
-    return 0,p
-end
-
-print(serialize(p))
-local sz,str = pack(p)
-local ret,pp = unpack(sz,str)
+local p = {
+    protId = 1,
+    user = "hanxi",
+    money = 0xffff0fffff,
+    list = {{a=1,b="h"},{a=2,b="s"}},
+}
+prot = lproto.initProt(protDict)
+local sz,str = prot:pack(test_prot_Id,p)
+local ret,pp = prot:unpack(str,sz)
 print(ret,pp)
 print(serialize(pp))
 
