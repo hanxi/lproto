@@ -88,7 +88,7 @@ function prot:pack(protId,p)
     return lproto_c.getpack()
 end
 
--- return : ret(0), p
+-- return : ret(0), protId, p
 function prot:unpack(buffer,sz)
     if sz>=BUFFER_MAX_LEN then
         print(string.format("buffer size limit : %d",BUFFER_MAX_LEN))
@@ -132,7 +132,7 @@ function prot:unpack(buffer,sz)
             p[key] = v
         end
     end
-    return 0,p
+    return 0,protId,p
 end
 
 return lproto

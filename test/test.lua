@@ -57,7 +57,7 @@ local p = {
 }
 prot = lproto.initProt(protDict)
 local sz,str = prot:pack(test_prot_Id,p)
-local ret,pp = prot:unpack(str,sz)
-print(ret,pp)
+local ret,protId,pp = prot:unpack(str,sz)
+print(ret,protId,pp)
 print(serialize(pp))
 
