@@ -56,8 +56,11 @@ local p = {
     list = {{a=1,b="h"},{a=2,b="s"}},
 }
 prot = lproto.initProt(protDict)
+print("protId=",test_prot_Id)
 local sz,str = prot:pack(test_prot_Id,p)
+print(sz,str)
 local ret,protId,pp = prot:unpack(str,sz)
+print("protId=",protId)
 print(ret,protId,pp)
 print(serialize(pp))
 

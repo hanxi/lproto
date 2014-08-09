@@ -8,6 +8,14 @@
 #include <assert.h>
 #include <inttypes.h>
 
+#define MALLOC malloc
+#define FREE free
+
+#define BUFFER_MAX_LEN 10240
+
+static char gwbuffer[BUFFER_MAX_LEN] = {0};
+static char * grbuffer = NULL;
+
 static const char T1 = 0x01; // 正,8位
 static const char t1 = 0xF1; // 负,8位
 static const char T2 = 0x02; // 正,16位
@@ -17,33 +25,9 @@ static const char t3 = 0xF4; // 负,32位
 static const char T4 = 0x08; // 正,64位
 static const char t4 = 0xF8; // 夫,64位
 
-#define BUFFER_MAX_LEN 10240
-static char gbuffer[BUFFER_MAX_LEN] = {0};
-
-struct block {
-    int sz;
-    char * ptr;
-    char * buffer;
-};
-
-static struct block gblock;
-
-int
-lpackinit(lua_State * L) {
-    gblock.sz = 0;
-    gblock.ptr = gbuffer;
-    gblock.buffer = gbuffer;
-    return 0;
-}
-
 int
 lunpackinit(lua_State * L) {
-    int sz = lua_tointeger(L,1);
-    const char * buffer = lua_tostring(L,2);
-    memcpy(gbuffer,buffer,sz);
-    gblock.sz = sz;
-    gblock.ptr = gbuffer;
-    gblock.buffer = gbuffer;
+    grbuffer = lua_touserdata(L,1);
     return 0;
 }
 
@@ -126,20 +110,24 @@ writestring(const char* value,char *ptr,int bufferlen) {
 int
 lwrite(lua_State * L) {
     int tp = lua_type(L,1);
-    int bufferlen = BUFFER_MAX_LEN-gblock.sz;
+    int offset = lua_tointeger(L,2);
+
+    int bufferlen = BUFFER_MAX_LEN-offset;   // remain buffer length
     int wsz = 0;
+
+    char * ptr = gwbuffer + offset;
     if (tp==LUA_TNUMBER) {
         uint64_t value = lua_tonumber(L,1);
-        wsz = writeinteger(value,(uint8_t *)gblock.ptr,bufferlen);
+        wsz = writeinteger(value,(uint8_t *)ptr,bufferlen);
     } else if (tp==LUA_TSTRING) {
         const char * value = lua_tostring(L,1);
-        wsz = writestring(value,gblock.ptr,bufferlen);
+        wsz = writestring(value,ptr,bufferlen);
     } else {
         fprintf(stderr,"error:unknow type %s\n",lua_typename(L,lua_type(L,1)));
     }
-    gblock.ptr += wsz;
-    gblock.sz += wsz;
-    lua_pushnumber(L,gblock.sz);
+    lua_settop(L,0);
+
+    lua_pushnumber(L,wsz);
     return 1;
 }
 
@@ -248,36 +236,52 @@ void luaStackDump(lua_State* pL){
 	}
 }
 
+#define TINTEGER 1
+#define TSTRING  2
+
 int
 lread(lua_State * L) {
-    const char * tp = lua_tostring(L,1);
-    lua_pop(L,1);
-    int bufferlen = gblock.sz;
+    int tp = lua_tointeger(L,1);
+    int offset = lua_tointeger(L,2);
+    lua_settop(L,0);
+
+    int bufferlen = offset;
     int rsz = 0;
-    if (strcmp(tp,"number")==0) {
+
+    char * ptr = grbuffer + offset;
+    if (tp == TINTEGER) {
         int64_t value = 0;
-        rsz = readinteger((const uint8_t *)gblock.ptr,bufferlen,&value);
+        rsz = readinteger((const uint8_t *)ptr,bufferlen,&value);
         lua_pushnumber(L,value);
-    } else if (strcmp(tp,"string")==0) {
+    } else if (tp == TSTRING) {
         int64_t len = 0;
-        int sz = readinteger((const uint8_t *)gblock.ptr,bufferlen,&len);
-        lua_pushlstring(L,gblock.ptr+sz,len);
+        int sz = readinteger((const uint8_t *)ptr,bufferlen,&len);
+        lua_pushlstring(L,ptr+sz,len);
         rsz = sz + len;
     } else {
-        fprintf(stderr,"error:unknow type %s\n",tp);
+        fprintf(stderr,"error:unknow type %d\n",tp);
     }
-    gblock.ptr += rsz;
-    gblock.sz -= rsz;
-    lua_pushnumber(L,gblock.sz);
+
+    lua_pushnumber(L,rsz);
     lua_insert(L,1);
     return 2;
 }
 
 int
-lgetpack(lua_State * L) {
-    lua_pushnumber(L,gblock.sz);
-    lua_pushlstring(L,gblock.buffer,gblock.sz);
+lnewpack(lua_State * L) {
+    int sz = lua_tointeger(L,1);
+
+    void * buffer = MALLOC(sz);
+    memcpy(buffer,gwbuffer,sz);
+    lua_pushlightuserdata(L,buffer);
     return 2;
+}
+
+int
+ldeletepack(lua_State * L) {
+    void * buffer = lua_touserdata(L,1);
+    FREE(buffer);
+    return 0;
 }
 
 static inline int
@@ -293,39 +297,43 @@ write_2byte(char * buffer, int r, int pos) {
 }
 
 int
-lreadid(lua_State * L) {
-    int id = read_2byte(gblock.ptr, 0);
-    lua_pushnumber(L,id);
+lread_2byte(lua_State * L) {
+    int offset = lua_tointeger(L,1);
+    lua_settop(L,0);
+
+    char * ptr = grbuffer + offset;
+    int _2b = read_2byte(ptr, 0);
+    lua_pushnumber(L,_2b);
 
     int rsz = 2;
-    gblock.ptr += rsz;
-    gblock.sz -= rsz;
-    lua_pushnumber(L,gblock.sz);
+    lua_pushnumber(L,rsz);
     lua_insert(L,1);
     return 2;
 }
 
 int
-lwriteid(lua_State * L) {
-    int id = lua_tointeger(L,1);
-    write_2byte(gblock.ptr, id, 0);
+lwrite_2byte(lua_State * L) {
+    int _2b = lua_tointeger(L,1);
+    int offset = lua_tointeger(L,2);
+    lua_settop(L,0);
+
+    char * ptr = gwbuffer + offset;
+    write_2byte(ptr, _2b, 0);
 
     int wsz = 2;
-    gblock.ptr += wsz;
-    gblock.sz += wsz;
-    lua_pushnumber(L,gblock.sz);
+    lua_pushnumber(L,wsz);
     return 1;
 }
 
 int luaopen_lproto_c(lua_State *L) {
     luaL_checkversion(L);
     luaL_Reg l[] ={
-        { "packinit", lpackinit },
-        { "writeid", lwriteid },
+        { "write_2byte", lwrite_2byte },
         { "write", lwrite },
-        { "getpack", lgetpack },
+        { "newpack", lnewpack },
+        { "deletepack", ldeletepack },
         { "unpackinit", lunpackinit },
-        { "readid", lreadid },
+        { "read_2byte", lread_2byte },
         { "read", lread },
         { NULL, NULL },
     };
