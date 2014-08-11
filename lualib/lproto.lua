@@ -90,7 +90,7 @@ function prot:pack(fd,protId,p)
             end
         else
             if type(p[key]) ~= tp then
-                p[k] = protDict[protId][key]
+                p[key] = protDict[protId][key]
             end
             local ret = lproto_c.write(p[key],sz)
             if ret>=BUFFER_MAX_LEN then
