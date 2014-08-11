@@ -3,20 +3,24 @@ local lproto = require "lproto"
 
 local protDict = {}
 
-local function registProt(p)
+local function registprot(p)
     table.insert(protDict,p)
     return #protDict
 end
 
+--[[
+-- define protocol dict
+--]]
 local dp = {
     user = "hanxi",
     money = 100,
-    list = {
+    list = { -- it mean's array. the element is the table content.
         a = 1,
         b = "hao",
     },
 }
-local test_prot_Id = registProt(dp)
+local test_prot_Id = registprot(dp)
+prot = lproto.initprot(protDict)
 
 -- 序列化
 function serialize(obj,n)
@@ -49,18 +53,21 @@ function serialize(obj,n)
     return lua
 end
 
+--[[
+-- the protocol will bu pack
+--]]
 local p = {
     protId = 1,
     user = "hanxi",
     money = 0xffff0fffff,
     list = {{a=1,b="h"},{a=2,b="s"}},
 }
-prot = lproto.initProt(protDict)
-print("protId=",test_prot_Id)
-local sz,str = prot:pack(test_prot_Id,p)
-print(sz,str)
-local ret,protId,pp = prot:unpack(str,sz)
-print("protId=",protId)
-print(ret,protId,pp)
+local fd = 1
+print("pack protId=",test_prot_Id)
+local sz,str = prot:pack(fd,test_prot_Id,p)
+print("return : ",sz,str)
+local ret,fd,protId,pp = prot:unpack(str,sz)
+print("upacke protId=",protId)
+print("return : ",ret,fd,protId,pp)
 print(serialize(pp))
 

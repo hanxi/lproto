@@ -11,7 +11,7 @@ local TINTEGER = 1
 local TSTRING  = 2
 
 --[[ buffer content
--- | - 2byte protId - | - prot - |
+-- | - 2byre size - | - 2byte fd - | - 2byte protId - | - prot - |
 --]]
 
 local function pairsbykey(t,f)
@@ -31,7 +31,8 @@ local function pairsbykey(t,f)
     return iter
 end
 
-function lproto.initProt(protDict)
+-- return : prot (metatable for pack and unpack)
+function lproto.initprot(protDict)
     for protId,p in pairs(protDict) do
         local _keysort = {}
         for k,v in pairsbykey(p) do
@@ -94,7 +95,6 @@ function prot:pack(fd,protId,p)
         end
     end
     local ret = lproto_c.write_2byte(sz-2,0)
-    print("buffer size=",sz)
     return lproto_c.newpack(sz)
 end
 

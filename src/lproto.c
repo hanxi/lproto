@@ -12,6 +12,8 @@
 #define FREE free
 
 #define BUFFER_MAX_LEN 10240
+#define TINTEGER 1
+#define TSTRING  2
 
 static char gwbuffer[BUFFER_MAX_LEN] = {0};
 static char * grbuffer = NULL;
@@ -25,6 +27,9 @@ static const char t3 = 0xF4; // 负,32位
 static const char T4 = 0x08; // 正,64位
 static const char t4 = 0xF8; // 夫,64位
 
+/*
+ * lightuserdata buffer
+ */
 int
 lunpackinit(lua_State * L) {
     grbuffer = lua_touserdata(L,1);
@@ -107,6 +112,13 @@ writestring(const char* value,char *ptr,int bufferlen) {
     return 0;
 }
 
+/* 
+ * string or integer (will write data)
+ * integer offset
+ *
+ * return 
+ *      integer (write size)
+ */
 int
 lwrite(lua_State * L) {
     int tp = lua_type(L,1);
@@ -236,9 +248,13 @@ void luaStackDump(lua_State* pL){
 	}
 }
 
-#define TINTEGER 1
-#define TSTRING  2
-
+/*
+ * integer type (integer 1,string 2)
+ * integer offset
+ *
+ * return
+ *      integer read size
+ */
 int
 lread(lua_State * L) {
     int tp = lua_tointeger(L,1);
@@ -267,6 +283,13 @@ lread(lua_State * L) {
     return 2;
 }
 
+/*
+ * integer size
+ *
+ * return 
+ *      integer size
+ *      lightuserdata buffer
+ */
 int
 lnewpack(lua_State * L) {
     int sz = lua_tointeger(L,1);
@@ -277,6 +300,9 @@ lnewpack(lua_State * L) {
     return 2;
 }
 
+/*
+ * lightuserdata buffer
+ */
 int
 ldeletepack(lua_State * L) {
     void * buffer = lua_touserdata(L,1);
@@ -296,6 +322,12 @@ write_2byte(char * buffer, int r, int pos) {
     buffer[pos+1] = r & 0xff;
 }
 
+/*
+ * integer offset
+ *
+ * return 
+ *      integer read size
+ */
 int
 lread_2byte(lua_State * L) {
     int offset = lua_tointeger(L,1);
@@ -311,6 +343,13 @@ lread_2byte(lua_State * L) {
     return 2;
 }
 
+/*
+ * integer 2byte integer
+ * integer offset
+ * 
+ * return 
+ *      integer (write size)
+ */
 int
 lwrite_2byte(lua_State * L) {
     int _2b = lua_tointeger(L,1);
