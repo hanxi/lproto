@@ -77,6 +77,9 @@ function prot:pack(fd,protId,p)
             sz = sz + ret
             for _,v in ipairs(p[key]) do
                 for _,k in ipairs(protDict[protId][key]._keysort) do
+                    if type(v[k]) ~= type(protDict[protId][key][k]) then
+                        v[k] = protDict[protId][key][k]
+                    end
                     ret = lproto_c.write(v[k],sz)
                     if ret>=BUFFER_MAX_LEN then
                         print(errstr)
@@ -86,6 +89,9 @@ function prot:pack(fd,protId,p)
                 end
             end
         else
+            if type(p[key]) ~= tp then
+                p[k] = protDict[protId][key]
+            end
             local ret = lproto_c.write(p[key],sz)
             if ret>=BUFFER_MAX_LEN then
                 print(errstr)
