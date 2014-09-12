@@ -161,7 +161,7 @@ readinteger(const uint8_t * ptr, int bufferlen, int64_t *value) {
             return -1;
         }
 
-        int64_t v64 = (int64_t)ptr[1]
+        uint64_t v64 = (int64_t)ptr[1]
                     | (int64_t)ptr[2] << 8
                     | (int64_t)ptr[3] << 16
                     | (int64_t)ptr[4] << 24
@@ -183,7 +183,7 @@ readinteger(const uint8_t * ptr, int bufferlen, int64_t *value) {
             return -1;
         }
 
-        int32_t v32 = ptr[1] | ptr[2] << 8 | ptr[3] << 16 | ptr[4] << 24;
+        uint32_t v32 = ptr[1] | ptr[2] << 8 | ptr[3] << 16 | ptr[4] << 24;
         *value = positive ? v32 : -v32;
         tlen += sizeof(int32_t);
 
@@ -197,7 +197,7 @@ readinteger(const uint8_t * ptr, int bufferlen, int64_t *value) {
             return -1;
         }
 
-        int16_t v16 = ptr[1] | ptr[2] << 8;
+        uint16_t v16 = ptr[1] | ptr[2] << 8;
         *value = positive ? v16 : -v16;
         tlen += sizeof(int16_t);
 
@@ -212,7 +212,7 @@ readinteger(const uint8_t * ptr, int bufferlen, int64_t *value) {
         }
 
         //int8_t v8 = *((int8_t*)(ptr + tlen));
-        int8_t v8 = ptr[1];
+        uint8_t v8 = ptr[1];
         *value = positive ? v8 : -v8;
         tlen += sizeof(int8_t);
 
