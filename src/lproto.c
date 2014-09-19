@@ -37,7 +37,7 @@ lunpackinit(lua_State * L) {
 }
 
 static inline int
-writeinteger(uint64_t value, uint8_t *ptr, int bufferlen) {
+writeinteger(int64_t value, uint8_t *ptr, int bufferlen) {
     bool positive = true;
     if(value < 0) {
         positive = false;
@@ -129,7 +129,7 @@ lwrite(lua_State * L) {
 
     char * ptr = gwbuffer + offset;
     if (tp==LUA_TNUMBER) {
-        uint64_t value = lua_tonumber(L,1);
+        int64_t value = lua_tonumber(L,1);
         wsz = writeinteger(value,(uint8_t *)ptr,bufferlen);
     } else if (tp==LUA_TSTRING) {
         const char * value = lua_tostring(L,1);
