@@ -103,11 +103,18 @@ void buffer_test()
     int64_t maxn = 0x7FFFFFFFFFFFFFFF;
     printf("max int64_t : %lld\nmin int64_t : %lld\n",maxn,maxn+1);
 
-    long double v = -3.141593678910293485;
-    buffer_push_back_float(buf3, v);
-    printf("buffer_push_back_float:%.9llf\n",v);
-    buffer_pop_front_float(buf3, &v);
-    printf("buffer_pop_front_float:%.9llf\n",v);
+    int64_t v1 = 1;
+    int64_t v2 = 2;
+    buffer_push_back_integer(buf3,v1);
+    buffer_push_back_integer(buf3,v2);
+    buffer_dump(buf3,"buf3");
+    buffer_pop_front_integer(buf3,&v1);
+    buffer_pop_front_integer(buf3,&v2);
+    printf("buffer_pop_front_integer:%d,%d\n",v1,v2);
+
+    buffer_delete(&buf3);
+
+
 
     printf("\nsize_t:%d\n",sizeof(size_t));
     printf("long:%d\n",sizeof(long));

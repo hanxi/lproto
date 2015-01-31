@@ -28,7 +28,7 @@ struct field {
     union {
         char str_value[MAX_DEFALUT_STR_LEN];
         int int_value;
-    } default_value;
+    }default_value;
 };
 
 struct field_list {
@@ -101,7 +101,7 @@ static int field_cmp(struct field *node1, struct field *node2)
     return ret;
 }
 
-// insert and sort
+// insert and sort 
 static void field_list_insert(struct field_list *fl, struct field *node)
 {
     if (fl->head == NULL) {
@@ -126,46 +126,46 @@ static int load_proto(lua_State *L, struct field *node, const char *key)
 {
     strncpy(node->key, key, sizeof(node->key) - 1);
     switch (lua_type(L, -1)) {
-    case LUA_TTABLE:
-        lua_pushnil(L);
-        if (lua_next(L, -2)) {
-            node->child = field_list_new();
-            if (lua_isnumber(L ,-2)) { // array
-                node->type = TARRAY;
-                struct field *tmp_node = field_new();
-                load_proto(L, tmp_node, "");
-                field_list_insert(node->child, tmp_node);
-                lua_pop(L, 2);
-            } else { // table
-                node->type = TTABLE;
-                lua_pop(L, 2);
-                lua_pushnil(L);
-                while (lua_next(L, -2)) {
+        case LUA_TTABLE:
+            lua_pushnil(L);
+            if (lua_next(L, -2)) {
+                node->child = field_list_new();
+                if (lua_isnumber(L ,-2)) { // array
+                    node->type = TARRAY;
                     struct field *tmp_node = field_new();
-                    load_proto(L, tmp_node, lua_tostring(L, -2));
+                    load_proto(L, tmp_node, "");
                     field_list_insert(node->child, tmp_node);
-                    lua_pop(L, 1);
+                    lua_pop(L, 2);
+                } else { // table
+                    node->type = TTABLE;
+                    lua_pop(L, 2);
+                    lua_pushnil(L);
+                    while (lua_next(L, -2)) {
+                        struct field *tmp_node = field_new();
+                        load_proto(L, tmp_node, lua_tostring(L, -2));
+                        field_list_insert(node->child, tmp_node);
+                        lua_pop(L, 1);
+                    }
                 }
             }
-        }
-        break;
-    case LUA_TSTRING:
-        node->type = TSTRING;
-        strncpy(node->default_value.str_value, lua_tostring(L,-1),
-                sizeof(node->key)-1);
-        break;
-    case LUA_TNUMBER: {
-        lua_Number v = lua_tonumber(L, -1);
-        if (v==(lua_Integer)v) {
-            node->type = TINTEGER;
-            node->default_value.int_value = v;
-        } else {
-            node->type = TFLOAT;
+            break;
+        case LUA_TSTRING:
+            node->type = TSTRING;
             strncpy(node->default_value.str_value, lua_tostring(L,-1),
-                    sizeof(node->default_value.str_value)-1);
+                    sizeof(node->key)-1);
+            break;
+        case LUA_TNUMBER:{
+            lua_Number v = lua_tonumber(L, -1);
+            if (v==(lua_Integer)v) {
+                node->type = TINTEGER;
+                node->default_value.int_value = v;
+            } else {
+                node->type = TFLOAT;
+                strncpy(node->default_value.str_value, lua_tostring(L,-1),
+                        sizeof(node->default_value.str_value)-1);
+            }
         }
-    }
-    break;
+            break;
     }
     return 0;
 }
@@ -221,16 +221,16 @@ int serialize_proto(lua_State *L, struct field *node, struct buffer *buf)
     int before_len = buffer_get_length(buf);
     int tp = lua_type(L, -1);
     switch (node->type) {
-    case TINTEGER: {
+    case TINTEGER:{
         lua_Integer v = node->default_value.int_value;
         if (tp==LUA_TNUMBER || tp==LUA_TSTRING) {
             v = lua_tointeger(L, -1);
         }
         buffer_push_back_integer(buf, v);
-    }
-    break;
+        }
+        break;
     case TFLOAT:
-    case TSTRING: {
+    case TSTRING:{
         size_t len;
         const char *v = lua_tolstring(L, -1, &len);
         if (!v) {
@@ -239,8 +239,8 @@ int serialize_proto(lua_State *L, struct field *node, struct buffer *buf)
         }
         buffer_push_back_integer(buf, len);
         buffer_push_back_data(buf, v, len);
-    }
-    break;
+        }
+        break;
     case TARRAY:
         if (node->child) {
             int sz = lua_rawlen(L,-1);
@@ -287,13 +287,13 @@ int unserialize_proto(lua_State *L, struct field *node, struct buffer *buf)
         return 0;
     }
     switch (node->type) {
-    case TINTEGER: {
+    case TINTEGER:{
         int64_t v = 0;
         buffer_pop_front_integer(buf, &v);
         lua_pushinteger(L, v);
-    }
-    break;
-    case TFLOAT: {
+        }
+        break;
+    case TFLOAT:{
         int64_t len = 0;
         buffer_pop_front_integer(buf, &len);
         if (len <= buffer_get_length(buf)) {
@@ -303,9 +303,9 @@ int unserialize_proto(lua_State *L, struct field *node, struct buffer *buf)
             lua_tonumber(L, -1);
             free(v);
         }
-    }
-    break;
-    case TSTRING: {
+        }
+        break;
+    case TSTRING:{
         int64_t len = 0;
         buffer_pop_front_integer(buf, &len);
         if (len <= buffer_get_length(buf)) {
@@ -314,8 +314,8 @@ int unserialize_proto(lua_State *L, struct field *node, struct buffer *buf)
             lua_pushlstring(L, v, len);
             free(v);
         }
-    }
-    break;
+        }
+        break;
     case TARRAY:
         if (node->child) {
             struct field *tmp_node = node->child->head;

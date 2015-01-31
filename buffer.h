@@ -55,5 +55,7 @@ int buffer_pop_front_integer(struct buffer *buf, int64_t *value);
 
 void buffer_print(struct buffer *buf, const char *name);
 
+void buffer_dump(struct buffer *buf, const char *name);
+
 #endif
 

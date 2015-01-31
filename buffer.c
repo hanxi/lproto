@@ -101,7 +101,7 @@ int buffer_push_back_data(struct buffer *buf, const void *data, size_t size)
         if (!bc) {
             return -1;
         }
-        buf->head = buf->head = bc;
+        buf->head = buf->tail = bc;
     }
     int remain = bc->size - bc->offset - bc->length;
     if (remain >= (int)size) {
@@ -499,6 +499,20 @@ int buffer_write(struct buffer *buf, int fd, size_t size)
         }
     }
     return wsize;
+}
+
+void buffer_dump(struct buffer *buf, const char *name)
+{
+    printf("name=%s:",name);
+    struct buffer_chain *bc = buf->head;
+    while (bc) {
+        int i=0;
+        for (i=0; i<(int)bc->length; i++) {
+            printf("%02X ",*((unsigned char *)bc->data+bc->offset+i));
+        }
+        bc = bc->next;
+    }
+    printf("\n");
 }
 
 void buffer_print(struct buffer *buf, const char *name)
