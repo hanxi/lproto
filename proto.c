@@ -1,4 +1,5 @@
 #include "proto.h"
+#include "buffer.h"
 
 #include "lua.h"
 #include "lualib.h"
@@ -18,7 +19,6 @@
 #define MAX_DEFALUT_STR_LEN 32
 
 struct field_list;
-void print_field(struct field_list *fl, int n);
 
 struct field {
     struct field *next;
@@ -36,6 +36,8 @@ struct field_list {
     struct field *tail;
 };
 
+void print_field(struct field *node, int n);
+
 static struct field * field_new()
 {
     struct field *node = (struct field *)malloc(sizeof(struct field));
@@ -44,19 +46,18 @@ static struct field * field_new()
     return node;
 }
 
-static void field_list_delete(struct field_list **fl)
+static void field_delete(struct field **pnode)
 {
-    struct field *node = (*fl)->head;
-    while (node)  {
-        if (node->child != NULL) {
-            field_list_delete(&node->child);
+    if ((*pnode)->child != NULL) {
+        struct field *node = (*pnode)->child->head;
+        while (node) {
+            struct field *tmp_node = node->next;
+            field_delete(&node);
+            node = tmp_node;
         }
-
-        struct field *tmp_node = node;
-        node = node->next;
-        free(tmp_node);
     }
-    *fl = NULL;
+    free(*pnode);
+    *pnode = NULL;
 }
 
 static struct field_list * field_list_new()
@@ -96,7 +97,7 @@ void lua_dump_stack(lua_State *L)
 static int field_cmp(struct field *node1, struct field *node2)
 {
     int ret = strcmp(node1->key,node2->key);
-    printf("field_cmp:key1=%s,key2=%s,ret=%d\n",node1->key,node2->key,ret);
+    //printf("field_cmp:key1=%s,key2=%s,ret=%d\n",node1->key,node2->key,ret);
     return ret;
 }
 
@@ -121,16 +122,33 @@ static void field_list_insert(struct field_list *fl, struct field *node)
     }
 }
 
-static int load_table(lua_State *L, struct field_list *fl)
+static int load_proto(lua_State *L, struct field *node, const char *key)
 {
-    lua_pushnil(L);
-    //lua_dump_stack(L);
-    while (lua_next(L, -2)) {
-        //lua_dump_stack(L);
-        struct field *node = field_new();
-        strncpy(node->key, lua_tostring(L,-2), sizeof(node->key)-1);
-        int type = lua_type(L, -1);
-        switch (type) {
+    strncpy(node->key, key, sizeof(node->key) - 1);
+    switch (lua_type(L, -1)) {
+        case LUA_TTABLE:
+            lua_pushnil(L);
+            if (lua_next(L, -2)) {
+                node->child = field_list_new();
+                if (lua_isnumber(L ,-2)) { // array
+                    node->type = TARRAY;
+                    struct field *tmp_node = field_new();
+                    load_proto(L, tmp_node, "");
+                    field_list_insert(node->child, tmp_node);
+                    lua_pop(L, 2);
+                } else { // table
+                    node->type = TTABLE;
+                    lua_pop(L, 2);
+                    lua_pushnil(L);
+                    while (lua_next(L, -2)) {
+                        struct field *tmp_node = field_new();
+                        load_proto(L, tmp_node, lua_tostring(L, -2));
+                        field_list_insert(node->child, tmp_node);
+                        lua_pop(L, 1);
+                    }
+                }
+            }
+            break;
         case LUA_TSTRING:
             node->type = TSTRING;
             strncpy(node->default_value.str_value, lua_tostring(L,-1),
@@ -146,65 +164,8 @@ static int load_table(lua_State *L, struct field_list *fl)
                 strncpy(node->default_value.str_value, lua_tostring(L,-1),
                         sizeof(node->default_value.str_value)-1);
             }
-            }
-            break;
-        case LUA_TTABLE:
-            lua_pushnil(L);
-            if (lua_next(L, -2)) {
-                if (lua_isnumber(L, -2)) {
-                    node->type = TARRAY;
-                    node->child = field_list_new();
-                    struct field *tmp_node = field_new();
-                    switch (lua_type(L, -1)) {
-                    case LUA_TSTRING:
-                        tmp_node->type = TSTRING;
-                        strncpy(tmp_node->default_value.str_value, lua_tostring(L,-1),
-                                sizeof(tmp_node->default_value.str_value) - 1);
-                        break;
-                    case LUA_TNUMBER:{
-                        lua_Number v = lua_tonumber(L, -1);
-                        if (v==(lua_Integer)v) {
-                            tmp_node->type = TINTEGER;
-                            tmp_node->default_value.int_value = v;
-                        } else {
-                            tmp_node->type = TFLOAT;
-                            strncpy(tmp_node->default_value.str_value, lua_tostring(L,-1),
-                                    sizeof(tmp_node->default_value.str_value)-1);
-                        }
-                        }
-                        break;
-                    case LUA_TTABLE: {
-                        tmp_node->type = TTABLE;
-                        tmp_node->child = field_list_new();
-                        int ret = load_table(L,tmp_node->child);
-                        if (ret) {
-                            return ret;
-                        }
-                    }
-                        break;
-                    default:
-                        fprintf(stderr,"load_table array element unknow field type : type=%s",lua_typename(L,type));
-                        return -1;
-                    }
-                    field_list_insert(node->child,tmp_node);
-                    lua_pop(L,2);
-                } else {
-                    node->type = TTABLE;
-                    node->child = field_list_new();
-                    lua_pop(L,2);
-                    int ret = load_table(L,node->child);
-                    if (ret) {
-                        return ret;
-                    }
-                }
-            } else {
-                fprintf(stderr,"load_table null table : key=%s",lua_tostring(L,-2));
-                return -1;
-            }
-            break;
         }
-        field_list_insert(fl, node);
-        lua_pop(L, 1);
+            break;
     }
     return 0;
 }
@@ -213,18 +174,49 @@ static void print_space(int n)
 {
     int i=0;
     for (i=0; i<n; i++) {
-        printf("----");
+        printf("    ");
     }
 }
 
-void print_field(struct field_list *fl, int n)
+void print_field(struct field *node, int n)
 {
-    if (!fl) {
+    if (!node) {
         return;
     }
-    struct field *node = NULL;
-    for(node = fl->head; node != NULL; node = node->next) {
+    print_space(n);
+    if (strlen(node->key)>0) {
+        printf("['%s'] = ",node->key);
+    } else {
+        printf("[1] = ");
+    }
+    switch (node->type) {
+    case TINTEGER:
+        printf("%d,\n",node->default_value.int_value);
+        break;
+    case TFLOAT:
+        printf("%s,\n",node->default_value.str_value);
+        break;
+    case TSTRING:
+        printf("'%s',\n",node->default_value.str_value);
+        break;
+    case TTABLE:
+    case TARRAY:
+        printf("{\n");
+        struct field * tmp_node = NULL;
+        for (tmp_node=node->child->head; tmp_node!=NULL; tmp_node=tmp_node->next) {
+            print_field(tmp_node, n+1);
+        }
         print_space(n);
+        printf("},\n");
+        break;
+    }
+}
+
+int serialize_proto(lua_State *L, struct field_list *fl, struct buffer *buf)
+{
+    struct field *node = fl->head;
+    while (node) {
+        lua_getfield(L, -1, node->key);
         switch (node->type) {
         case TINTEGER:
             printf("[%s] = %d\n",node->key,node->default_value.int_value);
@@ -236,51 +228,16 @@ void print_field(struct field_list *fl, int n)
             printf("[%s] = '%s'\n",node->key,node->default_value.str_value);
             break;
         case TTABLE:
-            printf("[%s] = {\n",node->key);
-            print_field(node->child, n+1);
-            print_space(n);
-            printf("}\n");
-            break;
-        case TARRAY:
-            {
-            struct field *tmp_node = node->child->head;
-            switch (tmp_node->type) {
-            case TINTEGER:
-                printf("[%s] = { (array)(interger)\n",node->key);
-                print_space(n+1);
-                printf("[1] = %d\n",tmp_node->default_value.int_value);
-                print_space(n);
-                printf("}\n");
-                break;
-            case TFLOAT:
-                printf("[%s] = { (array)(float)\n",node->key);
-                print_space(n+1);
-                printf("[1] = %s\n",tmp_node->default_value.str_value);
-                print_space(n);
-                printf("}\n");
-                break;
-            case TSTRING:
-                printf("[%s] = { (array)(string)\n",node->key);
-                print_space(n+1);
-                printf("[1] = '%s'\n",tmp_node->default_value.str_value);
-                print_space(n);
-                printf("}\n");
-                break;
-            case TTABLE:
-                printf("[%s] = { (array)(table)\n",node->key);
-                print_space(n+1);
-                printf("[1] = {\n");
-                print_field(tmp_node->child,n+2);
-                print_space(n+1);
-                printf("}\n");
-                print_space(n);
-                printf("}\n");
-                break;
-            }
-            }
             break;
         }
+        node = node->next;
     }
+    return 0;
+}
+
+int unserialize_proto()
+{
+    return 0;
 }
 
 static const char *lua_str = "\
@@ -292,11 +249,18 @@ prot = { \
     iarray = {0,},\
     farray = {1.1},\
     sarray = {'sa'},\
+    tbl_array = {\
+        {x=1,y='tb',},\
+    },\
     tbl = {\
         a = 1,\
         d = 4,\
         b = 2,\
         c = 3,\
+        tbl_sarray = {'abcd',},\
+        tbl_iarray = {1},\
+        tbl_farray = {1.5},\
+        tbl_tblarray = {xx=1.5,yy='bbb',},\
     },\
 }\
 ";
@@ -316,12 +280,12 @@ void test_load_table()
     }
     lua_getglobal(L,"prot");
     //lua_dump_stack(L);
-    struct field_list *fl = field_list_new();
-    load_table(L, fl);
-    print_field(fl,0);
+    struct field *node = field_new();
+    load_proto(L, node, "prot");
+    print_field(node,0);
     printf("==================================\n");
-    field_list_delete(&fl);
-    print_field(fl,0);
+    field_delete(&node);
+    print_field(node,0);
 }
 
 int main()
