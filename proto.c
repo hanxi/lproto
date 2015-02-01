@@ -34,6 +34,7 @@ struct field {
 struct field_list {
     struct field *head;
     struct field *tail;
+    int len;
 };
 
 void print_field(struct field *node, int n);
@@ -65,6 +66,7 @@ static struct field_list * field_list_new()
     struct field_list *fl = (struct field_list *)malloc(sizeof(struct field_list));
     fl->head = NULL;
     fl->tail = NULL;
+    fl->len = 0;
     return fl;
 }
 
@@ -106,7 +108,9 @@ static void field_list_insert(struct field_list *fl, struct field *node)
 {
     if (fl->head == NULL) {
         fl->head = fl->tail = node;
+        fl->len = 1;
     } else {
+        fl->len++;
         struct field **pnode = &fl->head;
         while (*pnode) {
             struct field *tmp = *pnode;
@@ -248,11 +252,10 @@ int serialize_proto(lua_State *L, struct field *node, struct buffer *buf)
 
             struct field *tmp_node = node->child->head;
             int i = 0;
-            lua_pushnil(L);
-            while (lua_next(L, -2) && i<sz) {
+            for (i=0; i<sz; i++) {
+                lua_rawgeti(L, -1, i+1);
                 serialize_proto(L, tmp_node, buf);
                 lua_pop(L, 1);
-                i++;
             }
         } else {
             fprintf(stderr, "bug in TARRAY, why haven't child\n");
@@ -262,7 +265,7 @@ int serialize_proto(lua_State *L, struct field *node, struct buffer *buf)
         if (node->child) {
             struct field *tmp_node = node->child->head;
             while (tmp_node) {
-                lua_getfield(L, -1, tmp_node->key);
+                lua_rawgetp(L, -1, tmp_node->key);
                 serialize_proto(L, tmp_node, buf);
                 tmp_node = tmp_node->next;
                 lua_pop(L, 1);
@@ -321,23 +324,21 @@ int unserialize_proto(lua_State *L, struct field *node, struct buffer *buf)
             struct field *tmp_node = node->child->head;
             int64_t sz = 0;
             buffer_pop_front_integer(buf, &sz);
-            lua_newtable(L);
+            lua_createtable(L,sz,0);
             int i = 0;
             for (i=0; i<sz; i++) {
-                lua_pushinteger(L, i+1);
                 unserialize_proto(L, tmp_node, buf);
-                lua_settable(L,-3);
+                lua_rawseti(L, -2, i+1);
             }
         }
         break;
     case TTABLE:
         if (node->child) {
             struct field *tmp_node = node->child->head;
-            lua_newtable(L);
+            lua_createtable(L,0,node->child->len);
             while (tmp_node) {
-                lua_pushstring(L, tmp_node->key);
                 unserialize_proto(L, tmp_node, buf);
-                lua_settable(L,-3);
+                lua_rawsetp(L, -2, tmp_node->key);
                 tmp_node = tmp_node->next;
             }
         }
@@ -414,4 +415,3 @@ int main()
     test_load_table();
     return 0;
 }
-
