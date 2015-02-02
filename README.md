@@ -1,8 +1,11 @@
 #lproto
 
-CPU i5-5620 @2.4GHz
+CPU : i5-5620 @2.4GHz
 
-编码1M次 : 3.33 s
-解码1M次 : 4.4 s
-单位体积 : 64 bytes
+OS : CentOS 6.3
 
+encode 1M times : 3.33 s
+
+decode 1M times : 4.4 s
+
+size : 64 bytes
