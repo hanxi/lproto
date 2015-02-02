@@ -17,6 +17,7 @@
 #define TARRAY 4
 #define TTABLE 5
 
+#define ARRAY_KEY "1"
 
 struct field_list;
 
@@ -112,7 +113,7 @@ static int load_proto(lua_State *L, struct field *node)
             if (lua_isnumber(L ,-2)) { // array
                 node->type = TARRAY;
                 struct field *tmp_node = field_new();
-                strncpy(tmp_node->key, "1", sizeof(tmp_node->key));
+                strncpy(tmp_node->key, ARRAY_KEY, sizeof(tmp_node->key));
                 load_proto(L, tmp_node);
                 field_list_insert(node->child, tmp_node);
                 lua_pop(L, 2);
@@ -165,10 +166,10 @@ static void print_field(struct field *node, int n)
         return;
     }
     print_space(n);
-    if (strlen(node->key)>0) {
+    if (strcmp(node->key,ARRAY_KEY)!=0) {
         log_debug("['%s'] = ",node->key);
     } else {
-        log_debug("[1] = ");
+        log_debug("[%s] = ",node->key);
     }
     switch (node->type) {
     case TINTEGER:
@@ -188,7 +189,11 @@ static void print_field(struct field *node, int n)
             print_field(tmp_node, n+1);
         }
         print_space(n);
-        log_debug("},\n");
+        if (n==0) {
+            log_debug("}\n");
+        } else {
+            log_debug("},\n");
+        }
         break;
     }
 }
@@ -346,6 +351,11 @@ void proto_print_struct(struct proto *p)
 void proto_dump_buffer(struct proto *p)
 {
     buffer_dump(p->buf, p->root->key);
+}
+
+size_t proto_get_buffer_length(struct proto *p)
+{
+    return buffer_get_length(p->buf);
 }
 
 void proto_delete(struct proto **pp)

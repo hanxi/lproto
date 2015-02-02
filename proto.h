@@ -14,6 +14,7 @@ void proto_delete(struct proto **pp);
 void proto_print_struct(struct proto *p);
 // Print the protocal buffer.
 void proto_dump_buffer(struct proto *p);
+size_t proto_get_buffer_length(struct proto *p);
 
 // serialize proto
 int proto_serialize(lua_State *L, struct proto *p);

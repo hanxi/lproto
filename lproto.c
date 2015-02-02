@@ -53,6 +53,21 @@ static int ldumpproto(lua_State *L)
 
 /*
  * @param: proto lightuserdata
+ * @return: length int
+ */
+static int lgetlength(lua_State *L)
+{
+    struct proto *p = lua_touserdata(L, 1);
+    if (p == NULL) {
+        return luaL_argerror(L, 1, "Need a proto object");
+    }
+    int len = proto_get_buffer_length(p);
+    lua_pushinteger(L, len);
+    return 1;
+}
+
+/*
+ * @param: proto lightuserdata
  */
 static int lprintstruct(lua_State *L)
 {
@@ -99,9 +114,11 @@ int luaopen_lproto_core(lua_State *L)
         { "newproto", lnewproto },
         { "deleteproto", ldeleteproto },
         { "dumpproto", ldumpproto },
+        { "getlength", lgetlength },
         { "printstruct", lprintstruct},
         { "encode", lencode },
         { "decode", ldecode },
+        { NULL, NULL },
     };
     luaL_newlib(L, l);
     return 1;
