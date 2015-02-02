@@ -1,9 +1,9 @@
 all : test-buffer test-proto lproto.so
 
-test-buffer : test-buffer.c buffer.c
+test-buffer : test/test-buffer.c buffer.c
 	gcc -g -Wall -o $@ $^
 
-test-proto : test-proto.c proto.c buffer.c
+test-proto : test/test-proto.c proto.c buffer.c
 	gcc -g -Wall -o $@ $^ -L. -llua -lm -ldl
 
 lproto.so : lproto.c proto.c buffer.c

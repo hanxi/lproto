@@ -1,6 +1,6 @@
-#include "log.h"
-#include "buffer.h"
-#include "proto.h"
+#include "../log.h"
+#include "../buffer.h"
+#include "../proto.h"
 
 #include <lua.h>
 #include <lualib.h>
