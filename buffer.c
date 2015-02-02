@@ -1,9 +1,11 @@
 #include "buffer.h"
 
+#include "log.h"
+
 #include <stdlib.h>
 #include <stdio.h>
-#include <unistd.h>
 #include <errno.h>
+#include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <inttypes.h>
@@ -347,7 +349,7 @@ int buffer_expand(struct buffer *buf, size_t size)
             struct buffer_chain **pbc = &buf->tail;
             *pbc = bc;
             buffer_chain_delete(&buf->tail);
-            printf("free last\n");
+            log_debug("free last\n");
         } else {
             buf->tail->next = bc;
         }
@@ -443,7 +445,7 @@ int buffer_read(struct buffer *buf, int fd, int size)
         case EINTR:
             break;
         case EAGAIN:
-            fprintf(stderr, "buffer::read : EAGAIN capture.\n");
+            log_error("buffer_read : EAGAIN capture.\n");
             break;
         default:
             return -1; // other error
@@ -503,28 +505,28 @@ int buffer_write(struct buffer *buf, int fd, size_t size)
 
 void buffer_dump(struct buffer *buf, const char *name)
 {
-    printf("name=%s:",name);
+    log_debug("name=%s:",name);
     struct buffer_chain *bc = buf->head;
     while (bc) {
         int i=0;
         for (i=0; i<(int)bc->length; i++) {
-            printf("%02X ",*((unsigned char *)bc->data+bc->offset+i));
+            log_debug("%02X ",*((unsigned char *)bc->data+bc->offset+i));
         }
         bc = bc->next;
     }
-    printf("\n");
+    log_debug("\n");
 }
 
 void buffer_print(struct buffer *buf, const char *name)
 {
     struct buffer_chain *bc = buf->head;
     while (bc) {
-        printf("name=%s,offset=%ld,length=%ld,size=%ld,data=",name,bc->offset,bc->length,bc->size);
+        log_debug("name=%s,offset=%ld,length=%ld,size=%ld,data=",name,bc->offset,bc->length,bc->size);
         int i=0;
         for (i=0; i<(int)bc->length; i++) {
-            printf("%c",*((char *)bc->data+bc->offset+i));
+            log_debug("%c",*((char *)bc->data+bc->offset+i));
         }
-        printf("\n");
+        log_debug("\n");
         bc = bc->next;
     }
 }
@@ -632,7 +634,7 @@ int buffer_pop_front_integer(struct buffer *buf, int64_t *value)
         break;
     default:
         size = 0;
-        fprintf(stderr,"unknow type integer\n");
+        log_error("unknow type integer\n");
         break;
     }
     *value = positive ? *value : -*value;

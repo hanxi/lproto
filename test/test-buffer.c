@@ -3,6 +3,8 @@
 #include <string.h>
 #include <fcntl.h>
 #include <assert.h>
+#include <unistd.h>
+#include <inttypes.h>
 
 void buffer_test()
 {
@@ -98,10 +100,10 @@ void buffer_test()
         int len = buffer_get_length(buf3);
         int64_t v2 = 0;
         buffer_pop_front_integer(buf3,&v2);
-        printf("buf3:%d:%d:writeinteger:%lld,%p,readinteger:%lld,%p\n",i,len,v1,v1,v2,v2);
+        printf("buf3:%d:%d:writeinteger:%" PRId64 ",%" PRIx64 ",readinteger:%" PRId64 ",%" PRIx64 "\n",i,len,v1,v1,v2,v2);
     }
     int64_t maxn = 0x7FFFFFFFFFFFFFFF;
-    printf("max int64_t : %lld\nmin int64_t : %lld\n",maxn,maxn+1);
+    printf("max int64_t : %" PRId64 "\nmin int64_t : %" PRId64 "\n",maxn,maxn+1);
 
     int64_t v1 = 1;
     int64_t v2 = 2;
@@ -110,15 +112,9 @@ void buffer_test()
     buffer_dump(buf3,"buf3");
     buffer_pop_front_integer(buf3,&v1);
     buffer_pop_front_integer(buf3,&v2);
-    printf("buffer_pop_front_integer:%d,%d\n",v1,v2);
+    printf("buffer_pop_front_integer:%" PRId64 ",%" PRId64 "\n",v1,v2);
 
     buffer_delete(&buf3);
-
-
-
-    printf("\nsize_t:%d\n",sizeof(size_t));
-    printf("long:%d\n",sizeof(long));
-    printf("int:%d\n",sizeof(int));
 }
 
 int main(int argc, char *argv[])
