@@ -2,7 +2,7 @@
 
 lproto is short names of Lua Protocol, It's a protocol pack library, the protocol definition by `Lua Table` syntax(some limits).
 
-lproto 是 Lua Protocol的简写，是一个协议打包库，协议定义格式使用Lua Table格式（有所限制）。
+lproto 是 Lua Protocol的简写，是一个协议打包库，协议定义格式使用`Lua Table`格式（有所限制）。
 
 
 # Support Data Types
