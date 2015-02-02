@@ -1,8 +1,11 @@
-#介绍
+# Introduction
 
-`lproto` 是一个协议打包库，协议定义格式使用Lua Table格式（有所限制），使用C+Lua实现。
+`lproto` is a protocol pack library, the protocol definition by `Lua Table` syntax(some limits).
 
-# 协议支持数据类型
+`lproto` 是一个协议打包库，协议定义格式使用Lua Table格式（有所限制）。
+
+
+# Support Data Types
 
 * table (the key must be string)
 * integer (support 64 bits)
@@ -25,3 +28,11 @@
 * Only linux now
 * Only lua5.2
 * It simple to support others systems and others lua versions.
+
+
+## Compile and test
+
+```
+$ make
+$ lua test/test-lproto.lua
+```
