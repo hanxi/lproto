@@ -18,8 +18,8 @@ lproto 是 Lua Protocol的简写，是一个协议打包库，协议定义格式
 
 * CPU : i5-5620 @2.4GHz
 * OS : CentOS 6.3
-* encode 1M times : 3.33 s
-* decode 1M times : 4.4 s
+* encode 1M times : 1.67 s
+* decode 1M times : 3.06 s
 * size : 64 bytes
 
 
@@ -36,3 +36,9 @@ lproto 是 Lua Protocol的简写，是一个协议打包库，协议定义格式
 $ make
 $ lua test/test-lproto.lua
 ```
+
+## Others
+
+* print_r come from <https://github.com/cloudwu/sproto/blob/master/print_r.lua>
+* lproto.c api like this <https://github.com/cloudwu/sproto/blob/master/lsproto.c>
+* So Thanks cloudwu's [sproto](https://github.com/cloudwu/sproto).
