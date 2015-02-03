@@ -42,4 +42,3 @@ $ lua test/test-lproto.lua
 * print_r come from <https://github.com/cloudwu/sproto/blob/master/print_r.lua>
 * lproto.c api like this <https://github.com/cloudwu/sproto/blob/master/lsproto.c>
 * So Thanks cloudwu's [sproto](https://github.com/cloudwu/sproto).
-* 
