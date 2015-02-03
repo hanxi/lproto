@@ -36,3 +36,10 @@ lproto 是 Lua Protocol的简写，是一个协议打包库，协议定义格式
 $ make
 $ lua test/test-lproto.lua
 ```
+
+## Others
+
+* print_r come from <https://github.com/cloudwu/sproto/blob/master/print_r.lua>
+* lproto.c api like this <https://github.com/cloudwu/sproto/blob/master/lsproto.c>
+* So Thanks cloudwu's [sproto](https://github.com/cloudwu/sproto).
+* 
