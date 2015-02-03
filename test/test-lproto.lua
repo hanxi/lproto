@@ -53,24 +53,38 @@ local ab = {
 local times = ...
 
 times = assert(tonumber(times))
-print("times:",times)
+print("\ntimes:",times)
 
+local code
 local t1 = os.clock()
 for i=1,times do
-    core.encode(proto, ab)
+    code = core.encode(proto, ab)
 end
 local t2 = os.clock()
 print("encode_time:",t2-t1)
-print("buffer length:", core.getlength(proto)/times)
+print("buffer length:", string.len(code))
 
 local abc = nil
 local t3 = os.clock()
 for i=1,times do
-    abc = core.decode(proto)
+    abc = core.decode(proto, code)
 end
 local t4 = os.clock()
 print("decode_time:",t4-t3)
 
+local function hex_dump(buf)
+  for byte=1, #buf, 16 do
+     local chunk = buf:sub(byte, byte+15)
+     io.write(string.format('%08X  ',byte-1))
+     chunk:gsub('.', function (c) io.write(string.format('%02X ',string.byte(c))) end)
+     io.write(string.rep(' ',3*(16-#chunk)))
+     io.write(' ',chunk:gsub('%c','.'),"\n") 
+  end
+end
+print("\nbuffer dump:")
+hex_dump(code)
+
+print("\ndecode result:")
 print_r(abc)
 
 core.deleteproto(proto)

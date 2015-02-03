@@ -1,5 +1,4 @@
 #include "../log.h"
-#include "../buffer.h"
 #include "../proto.h"
 
 #include <lua.h>
@@ -81,13 +80,16 @@ void test_load_table()
     proto_print_struct(prot);
     log_debug("==================================\n");
 
-    int l = proto_serialize(L, prot);
-    log_debug("l1=%d\n",l);
-    proto_dump_buffer(prot);
+    int sz = 76;
+    char *buf = (char *)malloc(sz);
+    int l = proto_serialize(L, prot, buf, sz);
+    log_debug("l1=%d,sz=%d\n",l,sz);
 
-    l = proto_unserialize(L, prot);
+    l = proto_unserialize(L, prot, buf, sz);
     log_debug("l2=%d\n",l);
-    proto_dump_buffer(prot);
+
+    free(buf);
+    proto_delete(&prot);
 
     lua_dump_stack(L);
 }

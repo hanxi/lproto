@@ -12,14 +12,11 @@ void proto_delete(struct proto **pp);
 
 // Print the protocal struct template.
 void proto_print_struct(struct proto *p);
-// Print the protocal buffer.
-void proto_dump_buffer(struct proto *p);
-size_t proto_get_buffer_length(struct proto *p);
 
 // serialize proto
-int proto_serialize(lua_State *L, struct proto *p);
+int proto_serialize(lua_State *L, struct proto *p, void *buf, int sz);
 // unserialize proto
-int proto_unserialize(lua_State *L, struct proto *p);
+int proto_unserialize(lua_State *L, struct proto *p, const void *buf, int sz);
 
 #endif
 
