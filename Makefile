@@ -1,15 +1,12 @@
-all : test-buffer test-proto lproto.so
+all : test-proto lproto.so
 
-test-buffer : test/test-buffer.c buffer.c
-	gcc -g -Wall -o $@ $^
-
-test-proto : test/test-proto.c proto.c buffer.c
+test-proto : test/test-proto.c proto.c 
 	gcc -g -Wall -o $@ $^ -L. -llua -lm -ldl
 
-lproto.so : lproto.c proto.c buffer.c
+lproto.so : lproto.c proto.c 
 	gcc -O2 -Wall -shared -fPIC -o $@ $^ 
 
 clean :
-	rm test-buffer test-proto lproto.so
+	rm test-proto lproto.so
 
 
