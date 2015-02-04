@@ -1,7 +1,7 @@
 local core = require "lproto.core"
 local print_r = require "print_r"
 
-local protocal_mod = {
+local protocol_mod = {
     testtbl = {
         name = "default name",
         id = 0,
@@ -20,8 +20,8 @@ local protocal_mod = {
     }
 }
 
-local proto = core.newproto(protocal_mod, "testprot")
-print("protocal struct:")
+local proto = core.newproto(protocol_mod, "testprot")
+print("protocol struct:")
 core.printstruct(proto)
 
 local ab = {

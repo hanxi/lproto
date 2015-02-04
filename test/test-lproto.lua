@@ -17,7 +17,7 @@ local AddressBook = {
 }
 
 local proto = core.newproto(AddressBook, "AddressBook")
-print("protocal struct:")
+print("protocol struct:")
 core.printstruct(proto)
 
 local ab = {

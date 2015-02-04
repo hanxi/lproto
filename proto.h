@@ -6,11 +6,11 @@
 #define DEFAULT_STR_LEN 64
 struct proto;
 
-// Create a new protocal, the lua stack must be a lua protocal.
+// Create a new protocol, the lua stack must be a lua protocol.
 struct proto * proto_new(lua_State *L, const char *proto_name);
 void proto_delete(struct proto **pp);
 
-// Print the protocal struct template.
+// Print the protocol struct template.
 void proto_print_struct(struct proto *p);
 
 // serialize proto
