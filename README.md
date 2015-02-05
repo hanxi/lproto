@@ -8,7 +8,7 @@ Source in here:
 
 <http://git.oschina.net/hanxi/lproto>
 
-<http://github.com/hanxi/lproto>
+<https://github.com/hanxi/lproto>
 
 
 # Support Data Types
