@@ -3,7 +3,9 @@ lproto
 
 lua protocal : simple protocal by lua table .
 
-blog:<http://www.hanxi.info/2014/08/06/original-lua-protocal/>  (chinese)
+blog:<http://oldblog.hanxi.info/2014/08/06/original-lua-protocal/>  (chinese)
+
+new lprot is here <https://github.com/hanxi/blog/issues/2>
 
 #### compile and run in linux
 
