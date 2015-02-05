@@ -26,15 +26,15 @@ lproto 是 Lua Protocol的简写，是一个协议打包库，协议定义格式
 ## Support system
 
 * Only linux now
-* Only lua5.2
-* It simple to support others systems and others lua versions.
+* support lua5.1 lua5.2.3 lua5.3.0
+* I think it's simple to support others systems, you can try it.
 
 
 ## Compile and test
 
 ```
 $ make
-$ lua test/test-lproto.lua
+$ lua test/test-all-lproto.lua
 ```
 
 ## Others
