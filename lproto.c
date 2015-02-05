@@ -1,8 +1,6 @@
 #include "log.h"
 #include "proto.h"
-
-#include <lua.h>
-#include <lauxlib.h>
+#include "ldef.h"
 
 #define ENCODE_BUFFERSIZE 2050
 #define ENCODE_MAXSIZE 0x1000000

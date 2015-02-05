@@ -65,7 +65,7 @@ void test_load_table()
     luaL_checkversion(L);
     luaL_openlibs(L);   // link lua lib
     int err = luaL_loadstring(L, lua_str);
-    assert(err == LUA_OK);
+    assert(err == 0);
     err = lua_pcall(L, 0, 0, 0);
     if(err) {
         log_error("%s\n",lua_tostring(L,-1));

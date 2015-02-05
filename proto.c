@@ -1,10 +1,5 @@
 #include "proto.h"
-
 #include "log.h"
-
-#include <lua.h>
-#include <lualib.h>
-#include <lauxlib.h>
 
 #include <stdlib.h>
 #include <string.h>
@@ -385,7 +380,7 @@ static int field_serialize(lua_State *L, struct field *node, uint8_t *buf, int s
     break;
     case TARRAY:
         if (node->child) {
-            int len = luaL_len(L, -1);
+            int len = lua_rawlen(L, -1);
             int sz = buffer_pack_integer(buf, size, len);
             if (sz == 0) {
                 return -1;

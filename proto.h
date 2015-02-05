@@ -1,7 +1,7 @@
 #ifndef proto_h
 #define proto_h
 
-#include <lua.h>
+#include "ldef.h"
 
 #define DEFAULT_STR_LEN 64
 struct proto;
