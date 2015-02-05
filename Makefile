@@ -3,7 +3,7 @@ all : test-proto lproto.so
 CC= gcc -std=gnu99
 
 #5.1 5.2.3 5.3.0
-LUA_VERSION=5.2.3
+LUA_VERSION=5.3.0
 
 LUALIB=-Llua-$(LUA_VERSION)/src -llua
 LUAINC=-Ilua-$(LUA_VERSION)/src

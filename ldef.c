@@ -2,7 +2,8 @@
 
 #ifndef luaL_checkversion
 
-void luaL_setfuncs (lua_State *L, const luaL_Reg *l, int nup) {
+void luaL_setfuncs (lua_State *L, const luaL_Reg *l, int nup)
+{
     luaL_checkversion(L);
     luaL_checkstack(L, nup, "too many upvalues");
     for (; l->name != NULL; l++) {  /* fill the table with given functions */

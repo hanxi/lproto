@@ -43,7 +43,6 @@ struct field_list {
 
 struct proto {
     struct field *root;
-    //struct buffer *buf;
 };
 
 struct field * field_new()
@@ -79,7 +78,7 @@ static struct field_list * field_list_new()
 
 static int field_cmp(struct field *node1, struct field *node2)
 {
-    int ret = strcmp(node1->key,node2->key);
+    int ret = strcmp(node1->key, node2->key);
     return ret;
 }
 
@@ -94,7 +93,7 @@ static void field_list_insert(struct field_list *fl, struct field *node)
         struct field **pnode = &fl->head;
         while (*pnode) {
             struct field *tmp = *pnode;
-            if (field_cmp(tmp,node)>0) {
+            if (field_cmp(tmp, node) > 0) {
                 *pnode = node;
                 node->next = tmp;
                 return;
@@ -113,7 +112,7 @@ static int load_proto(lua_State *L, struct field *node)
         lua_pushnil(L);
         if (lua_next(L, -2)) {
             node->child = field_list_new();
-            if (lua_isnumber(L ,-2)) { // array
+            if (lua_isnumber(L, -2)) { // array
                 node->type = TARRAY;
                 struct field *tmp_node = field_new();
                 strncpy(tmp_node->key, ARRAY_KEY, sizeof(tmp_node->key));
@@ -169,20 +168,20 @@ static void print_field(struct field *node, int n)
         return;
     }
     print_space(n);
-    if (strcmp(node->key,ARRAY_KEY)!=0) {
-        log_debug("['%s'] = ",node->key);
+    if (strcmp(node->key, ARRAY_KEY)!=0) {
+        log_debug("['%s'] = ", node->key);
     } else {
-        log_debug("[%s] = ",node->key);
+        log_debug("[%s] = ", node->key);
     }
     switch (node->type) {
     case TINTEGER:
-        log_debug("%d,\n",node->default_value.int_value);
+        log_debug("%d,\n", node->default_value.int_value);
         break;
     case TFLOAT:
-        log_debug("%s,\n",node->default_value.str_value);
+        log_debug("%s,\n", node->default_value.str_value);
         break;
     case TSTRING:
-        log_debug("'%s',\n",node->default_value.str_value);
+        log_debug("'%s',\n", node->default_value.str_value);
         break;
     case TTABLE:
     case TARRAY:
@@ -354,7 +353,7 @@ static int field_serialize(lua_State *L, struct field *node, uint8_t *buf, int s
         return 0;
     }
     if (size <= 0) {
-        log_error("erro in serialize_proto, buffer no length.\n");
+        log_error("erro in serialize_proto, buffer no more length.\n");
         return -1;
     }
     int tp = lua_type(L, -1);
@@ -474,13 +473,13 @@ static int field_unserialize(lua_State *L, struct field *node, const uint8_t *bu
             size -= sz;
             buf += sz;
 
-            lua_createtable(L,len,0);
+            lua_createtable(L, len, 0);
             int i = 0;
             for (i=0; i<len; i++) {
                 int sz = field_unserialize(L, tmp_node, buf, size);
                 lua_rawseti(L, -2, i+1);
                 if (sz <= 0) {
-                    log_error("TARRAY no length.(size=%d)\n",size);
+                    log_error("TARRAY no length.(size=%d)\n", size);
                     return -1;
                 }
                 size -= sz;
@@ -491,7 +490,7 @@ static int field_unserialize(lua_State *L, struct field *node, const uint8_t *bu
     case TTABLE:
         if (node->child) {
             struct field *tmp_node = node->child->head;
-            lua_createtable(L,0,node->child->len);
+            lua_createtable(L, 0, node->child->len);
             while (tmp_node) {
                 int sz = field_unserialize(L, tmp_node, buf, size);
                 lua_setfield(L, -2, tmp_node->key);
