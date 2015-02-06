@@ -1,20 +1,3 @@
-<<<<<<< HEAD
-lproto
-======
-
-lua protocal : simple protocal by lua table .
-
-blog:<http://oldblog.hanxi.info/2014/08/06/original-lua-protocal/>  (chinese)
-
-new lproto is here <https://github.com/hanxi/blog/issues/2>
-
-#### compile and run in linux
-
-
-    $ make
-    $ lua test/test.lua
-
-=======
 # Introduction
 
 lproto is short names of Lua Protocol, It's a protocol pack library, the protocol definition by `Lua Table` syntax(some limits).
@@ -65,4 +48,3 @@ $ lua test/test-all-lproto.lua
 * print_r come from <https://github.com/cloudwu/sproto/blob/master/print_r.lua>
 * lproto.c api like this <https://github.com/cloudwu/sproto/blob/master/lsproto.c>
 * So Thanks cloudwu's [sproto](https://github.com/cloudwu/sproto).
->>>>>>> github-dev
