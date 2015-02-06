@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 PLAT ?= none
 PLATS = linux macosx
 
@@ -19,9 +20,13 @@ none :
 	@echo "   $(PLATS)"
 
 LUA_CLIB_PATH ?= luaclib
+=======
+all : test-proto lproto.so
+>>>>>>> github-dev
 
-CFLAGS = -g -Wall $(MYCFLAGS)
+CC= gcc -std=gnu99
 
+<<<<<<< HEAD
 linux : CFLAGS += -std=c99
 
 LIBS = -lpthread -lm
@@ -36,17 +41,23 @@ macosx : PLAT = macosx
 macosx linux : LIBS += -ldl
 macosx : SHARED = -fPIC -dynamiclib -Wl,-undefined,dynamic_lookup
 linux : LIBS += -lrt -lpthread
+=======
+#5.1 5.2.3 5.3.0
+LUA_VERSION=5.3.0
 
-LUA_CLIB = lproto
+LUALIB=-Llua-$(LUA_VERSION)/src -llua
+LUAINC=-Ilua-$(LUA_VERSION)/src
 
-all : \
-	$(foreach v, $(LUA_CLIB), $(LUA_CLIB_PATH)/$(v).so) 
+LIB=$(LUALIB) -lm -ldl
+INC=$(LUAINC)
+>>>>>>> github-dev
 
-$(LUA_CLIB_PATH) :
-	mkdir $(LUA_CLIB_PATH)
+test-proto : test/test-proto.c proto.c ldef.c
+	$(CC) -g -Wall -o $@ $^ $(INC) $(LIB)
 
-$(LUA_CLIB_PATH)/lproto.so : src/lproto.c | $(LUA_CLIB_PATH)
-	$(CC) $(CFLAGS) $(SHARED) $^ -o $@ $(LIBS)
+lproto.so : lproto.c proto.c ldef.c
+	$(CC) -O2 -Wall -shared -fPIC -o $@ $^ $(INC)
 
 clean :
-	rm -f $(LUA_CLIB_PATH)/*.so
+	rm test-proto lproto.so
+
