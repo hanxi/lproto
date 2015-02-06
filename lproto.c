@@ -106,15 +106,16 @@ static const void * getbuffer(lua_State *L, int index, size_t *sz)
             luaL_argerror(L, 1, "Need a proto object");
             return NULL;
         }
-        buffer = lua_touserdata(L, index);
-        *sz = luaL_checkinteger(L, index+1);
+        int offset = luaL_checkinteger(L, index+1);
+        buffer = (char *)lua_touserdata(L, index) + offset;
+        *sz = luaL_checkinteger(L, index+2);
     }
     return buffer;
 }
 
 /*
  * @param: proto lightuserdata
- * @param: string source / (lightuserdata, integer)
+ * @param: string source / (lightuserdata, integer offset, integer size)
  * @return: table
  */
 static int ldecode(lua_State *L)
