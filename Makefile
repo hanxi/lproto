@@ -1,25 +1,22 @@
-LUA_CLIB_PATH ?= luaclib
+all : test-proto lproto.so
 
-CFLAGS = -g -Wall $(MYCFLAGS)
+CC= gcc -std=gnu99
 
-#linux : CFLAGS += -O2
+#5.1 5.2.3 5.3.0
+LUA_VERSION=5.3.0
 
-LIBS =  -lm
-SHARED = -fPIC --shared
-EXPORT = -Wl,-E
+LUALIB=-Llua-$(LUA_VERSION)/src -llua
+LUAINC=-Ilua-$(LUA_VERSION)/src
 
-LIBS += -ldl -lrt 
+LIB=$(LUALIB) -lm -ldl
+INC=$(LUAINC)
 
-LUA_CLIB = lproto
+test-proto : test/test-proto.c proto.c ldef.c
+	$(CC) -g -Wall -o $@ $^ $(INC) $(LIB)
 
-all : \
-	$(foreach v, $(LUA_CLIB), $(LUA_CLIB_PATH)/$(v).so) 
-
-$(LUA_CLIB_PATH) :
-	mkdir $(LUA_CLIB_PATH)
-
-$(LUA_CLIB_PATH)/lproto.so : src/lproto.c | $(LUA_CLIB_PATH)
-	$(CC) $(CFLAGS) $(SHARED) $^ -o $@ $(LIBS)
+lproto.so : lproto.c proto.c ldef.c
+	$(CC) -O2 -Wall -shared -fPIC -o $@ $^ $(INC)
 
 clean :
-	rm -f $(LUA_CLIB_PATH)/*.so
+	rm test-proto lproto.so
+
