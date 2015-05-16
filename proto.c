@@ -187,8 +187,10 @@ static void print_field(struct field *node, int n)
     case TARRAY:
         log_debug("{\n");
         struct field * tmp_node = NULL;
-        for (tmp_node=node->child->head; tmp_node!=NULL; tmp_node=tmp_node->next) {
-            print_field(tmp_node, n+1);
+        if (node->child) {
+            for (tmp_node=node->child->head; tmp_node!=NULL; tmp_node=tmp_node->next) {
+                print_field(tmp_node, n+1);
+            }
         }
         print_space(n);
         if (n==0) {
@@ -361,7 +363,7 @@ static int field_serialize(lua_State *L, struct field *node, uint8_t *buf, int s
     case TINTEGER: {
         lua_Integer v = node->default_value.int_value;
         if (tp==LUA_TNUMBER || tp==LUA_TSTRING) {
-            v = lua_tointeger(L, -1);
+            v = (lua_Integer)lua_tonumber(L, -1);
         }
         size -= buffer_pack_integer(buf, size, v);
     }
