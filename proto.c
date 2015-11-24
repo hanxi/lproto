@@ -453,7 +453,9 @@ static int field_unserialize(lua_State *L, struct field *node, const uint8_t *bu
         const void *data = NULL;
         size -= buffer_unpack_data(buf, size, &data, &len);
         lua_pushlstring(L, data, len);
-        lua_tonumber(L, -1);
+        lua_Number d = lua_tonumber(L, -1);
+        lua_pop(L, 1);
+        lua_pushnumber(L, d);
     }
     break;
     case TSTRING: {
