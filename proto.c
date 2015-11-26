@@ -334,7 +334,7 @@ static int buffer_unpack_data(const uint8_t *buf, int sz, const void **data, int
 {
     int64_t len = 0;
     int size = buffer_unpack_integer(buf, sz, &len);
-    if (size == 0) {
+    if (size==0 || len<0) {
         return 0;
     }
     buf += size;
@@ -470,7 +470,7 @@ static int field_unserialize(lua_State *L, struct field *node, const uint8_t *bu
             struct field *tmp_node = node->child->head;
             int64_t len = 0;
             int sz = buffer_unpack_integer(buf, size, &len);
-            if (sz == 0) {
+            if (sz==0 || len<0) {
                 lua_pushnil(L);
                 return -1;
             }
